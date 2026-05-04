@@ -9,6 +9,249 @@ let signatureCtx = null, isDrawing = false;
 let addedErrorCodes = [];
 let currentErrorMatch = null;
 
+
+// ===== LANGUAGE SYSTEM =====
+let currentLang = 'en';
+
+const TRANSLATIONS = {
+  en: {
+    // Progress steps
+    step1:'Job Info', step2:'Unit Details', step3:'Refrigeration', step4:'Electrical',
+    step5:'Airflow', step6:'Inspection', step7:'Photos', step8:'Faults', step9:'Summary',
+    // Section 1
+    s1title:'Job Information', s1sub:'Customer and site details',
+    lblCustomer:'Customer Name', lblContact:'Contact Number',
+    lblSite:'Site Location', lblSitePh:'Search address or click map to pin location',
+    lblCity:'City', lblCityPh:'Auto-filled from GPS or enter manually',
+    lblCountry:'Country', lblCountryPh:'Auto-filled from GPS or enter manually',
+    lblDate:'Service Date', lblTech:'Technician Name', lblTechPh:'Engineer / Technician name',
+    lblServiceType:'Type of Service Visit',
+    stPM:'🔧 Preventive Maintenance', stComm:'⚙️ Commissioning',
+    stTrouble:'🔍 Troubleshooting', stHealth:'✅ Routine Health Check', stWarranty:'🛡️ Warranty',
+    btnGPS:'📍 Use GPS', btnNext:'Next', btnBack:'← Back',
+    // Section 2
+    s2title:'Unit Details', s2sub:'Brand, type and model selection',
+    lblBrand:'Brand', lblUnitType:'Unit Type', lblOutdoor:'Outdoor Model',
+    lblIndoor:'Indoor Model', lblSerial:'Serial Number', lblInstYear:'Installation Year',
+    lblInstYearPh:'e.g. 2022',
+    // Section 3
+    s3title:'Refrigeration Parameters', s3sub:'R-410A system readings and calculations',
+    // Section 9 action buttons
+    btnPreview:'👁 Preview Report', btnPDF:'📄 Save as PDF', btnWA:'💬 WhatsApp',
+    btnEmailRheem:'📧 Email Rheem', btnSubmit:'✅ Submit Report',
+    // Fault jump
+    jumpFault:'⚡ Jump to Fault Diagnosis',
+    // Toast messages
+    toastLoc:'Getting your location...', toastLocOK:'Location captured!',
+    toastCityOK:'City & country auto-filled!', toastLocFail:'Could not get location. Please enter address manually.',
+    toastFillCustomer:'Please fill in all required customer details',
+    toastPickService:'Please select a service visit type',
+    toastPickModel:'Please select brand, unit type and model',
+    toastErrAdded:'Error code already added',
+    toastStatus:'Please select overall system status',
+    toastSummary:'Please enter work performed summary',
+    toastSubmit:'✅ Report submitted! Generating PDF...',
+  },
+  ar: {
+    // Progress steps
+    step1:'بيانات الوظيفة', step2:'تفاصيل الوحدة', step3:'التبريد', step4:'الكهرباء',
+    step5:'تدفق الهواء', step6:'الفحص', step7:'الصور', step8:'الأعطال', step9:'الملخص',
+    // Section 1
+    s1title:'معلومات الوظيفة', s1sub:'بيانات العميل والموقع',
+    lblCustomer:'اسم العميل', lblContact:'رقم التواصل',
+    lblSite:'موقع الموقع', lblSitePh:'ابحث عن العنوان أو انقر على الخريطة لتحديد الموقع',
+    lblCity:'المدينة', lblCityPh:'تُملأ تلقائياً من GPS أو أدخلها يدوياً',
+    lblCountry:'البلد', lblCountryPh:'تُملأ تلقائياً من GPS أو أدخلها يدوياً',
+    lblDate:'تاريخ الخدمة', lblTech:'اسم الفني', lblTechPh:'اسم المهندس / الفني',
+    lblServiceType:'نوع زيارة الخدمة',
+    stPM:'🔧 الصيانة الوقائية', stComm:'⚙️ التشغيل والتسليم',
+    stTrouble:'🔍 استكشاف الأعطال', stHealth:'✅ فحص صحة دوري', stWarranty:'🛡️ ضمان',
+    btnGPS:'📍 استخدام GPS', btnNext:'التالي', btnBack:'→ رجوع',
+    // Section 2
+    s2title:'تفاصيل الوحدة', s2sub:'اختيار العلامة والنوع والموديل',
+    lblBrand:'العلامة التجارية', lblUnitType:'نوع الوحدة', lblOutdoor:'موديل الوحدة الخارجية',
+    lblIndoor:'موديل الوحدة الداخلية', lblSerial:'الرقم التسلسلي', lblInstYear:'سنة التركيب',
+    lblInstYearPh:'مثال: 2022',
+    // Section 3
+    s3title:'معاملات التبريد', s3sub:'قراءات نظام R-410A والحسابات',
+    // Section 9 action buttons
+    btnPreview:'👁 معاينة التقرير', btnPDF:'📄 حفظ كـ PDF', btnWA:'💬 واتساب',
+    btnEmailRheem:'📧 إرسال بريد ريم', btnSubmit:'✅ إرسال التقرير',
+    // Fault jump
+    jumpFault:'⚡ الانتقال لتشخيص الأعطال',
+    // Toast messages
+    toastLoc:'جارٍ تحديد موقعك...', toastLocOK:'تم تحديد الموقع!',
+    toastCityOK:'تم ملء المدينة والبلد تلقائياً!', toastLocFail:'تعذّر تحديد الموقع. يرجى إدخال العنوان يدوياً.',
+    toastFillCustomer:'يرجى ملء جميع بيانات العميل المطلوبة',
+    toastPickService:'يرجى اختيار نوع زيارة الخدمة',
+    toastPickModel:'يرجى اختيار العلامة والنوع والموديل',
+    toastErrAdded:'كود الخطأ مُضاف مسبقاً',
+    toastStatus:'يرجى اختيار حالة النظام الإجمالية',
+    toastSummary:'يرجى إدخال ملخص الأعمال المنجزة',
+    toastSubmit:'✅ تم إرسال التقرير! جارٍ إنشاء PDF...',
+  }
+};
+
+function t(key) {
+  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  document.body.classList.toggle('ar-mode', lang === 'ar');
+  document.documentElement.setAttribute('lang', lang);
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  
+  // Update active button
+  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  document.getElementById('btnAR').classList.toggle('active', lang === 'ar');
+  
+  // Update progress step labels
+  const stepLabels = document.querySelectorAll('.step');
+  stepLabels.forEach(s => {
+    const n = s.dataset.step;
+    const keyMap = {1:'step1',2:'step2',3:'step3',4:'step4',5:'step5',6:'step6',7:'step7',8:'step8',9:'step9'};
+    const key = keyMap[n];
+    if (key) {
+      const num = s.querySelector('span');
+      const numHtml = num ? num.outerHTML : '';
+      s.innerHTML = numHtml + ' ' + t(key);
+    }
+  });
+
+  // Update all data-en / data-ar elements
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.textContent = lang === 'ar' ? (el.getAttribute('data-ar') || el.getAttribute('data-en')) : el.getAttribute('data-en');
+  });
+
+  // Update section headers and labels
+  applyLabelTranslations(lang);
+}
+
+function applyLabelTranslations(lang) {
+  const isAr = lang === 'ar';
+  
+  // Section 1
+  const s1h = document.querySelector('.form-section[data-section="1"] h2');
+  const s1p = document.querySelector('.form-section[data-section="1"] p');
+  if(s1h) s1h.textContent = t('s1title');
+  if(s1p) s1p.textContent = t('s1sub');
+  
+  // Field labels mapping: [labelText_en, inputId_or_null, placeholderKey]
+  const labelMaps = [
+    ['Customer Name', 'customerName', 'lblCustomer', 'lblCustomerPh'],
+    ['Contact Number', 'contactNumber', 'lblContact', null],
+    ['Site Location', 'siteAddress', 'lblSite', 'lblSitePh'],
+    ['City', 'cityField', 'lblCity', 'lblCityPh'],
+    ['Country', 'countryField', 'lblCountry', 'lblCountryPh'],
+    ['Service Date', 'serviceDate', 'lblDate', null],
+    ['Technician Name', 'techName', 'lblTech', 'lblTechPh'],
+    ['Type of Service Visit', null, 'lblServiceType', null],
+  ];
+
+  // Update GPS button
+  const gpsBtn = document.getElementById('locateBtn');
+  if(gpsBtn) gpsBtn.textContent = t('btnGPS');
+
+  // Update service type toggle buttons
+  const stButtons = document.querySelectorAll('#serviceTypeGroup .toggle-btn');
+  const stKeys = ['stPM','stComm','stTrouble','stHealth','stWarranty'];
+  stButtons.forEach((b,i) => { if(stKeys[i]) b.textContent = t(stKeys[i]); });
+
+  // Update Next/Back buttons text
+  document.querySelectorAll('.btn-next').forEach(b => {
+    const sec = b.closest('.form-section')?.dataset.section;
+    const nextLabels = {
+      1: isAr ? 'التالي: تفاصيل الوحدة ←' : 'Next: Unit Details →',
+      2: isAr ? 'التالي: التبريد ←' : 'Next: Refrigeration →',
+      3: isAr ? 'التالي: الكهرباء ←' : 'Next: Electrical →',
+      4: isAr ? 'التالي: تدفق الهواء ←' : 'Next: Airflow →',
+      5: isAr ? 'التالي: الفحص ←' : 'Next: Inspection →',
+      6: isAr ? 'التالي: الصور ←' : 'Next: Photos →',
+      7: isAr ? 'التالي: تشخيص الأعطال ←' : 'Next: Fault Diagnosis →',
+      8: isAr ? 'التالي: الملخص ←' : 'Next: Summary →',
+    };
+    if(sec && nextLabels[sec]) b.textContent = nextLabels[sec];
+  });
+  document.querySelectorAll('.btn-back').forEach(b => { b.textContent = isAr ? '→ رجوع' : '← Back'; });
+
+  // Update Jump to Fault button
+  const jumpBtn = document.querySelector('.fault-quick-btn');
+  if(jumpBtn) jumpBtn.textContent = t('jumpFault');
+
+  // Update action buttons
+  const btnPreview = document.querySelector('.btn-preview');
+  const btnPDF = document.querySelector('.btn-print');
+  const btnWA = document.querySelector('.btn-whatsapp');
+  const btnSubmit = document.querySelector('.btn-submit');
+  const btnEmailRheem = document.querySelector('.btn-email-rheem');
+  if(btnPreview) btnPreview.textContent = t('btnPreview');
+  if(btnPDF) btnPDF.textContent = t('btnPDF');
+  if(btnWA) btnWA.textContent = t('btnWA');
+  if(btnSubmit) btnSubmit.textContent = t('btnSubmit');
+  if(btnEmailRheem) btnEmailRheem.innerHTML = t('btnEmailRheem');
+
+  // Section 2
+  const s2h = document.querySelector('.form-section[data-section="2"] h2');
+  const s2p = document.querySelector('.form-section[data-section="2"] p');
+  if(s2h) s2h.textContent = t('s2title');
+  if(s2p) s2p.textContent = t('s2sub');
+
+  // Section 3
+  const s3h = document.querySelector('.form-section[data-section="3"] h2');
+  const s3p = document.querySelector('.form-section[data-section="3"] p');
+  if(s3h) s3h.textContent = t('s3title');
+  if(s3p) s3p.textContent = t('s3sub');
+
+  // Update placeholders
+  const phMap = {
+    'customerName': isAr ? 'الاسم الكامل أو الشركة' : 'Full name or company',
+    'contactNumber': isAr ? '+971 xx xxx xxxx' : '+971 xx xxx xxxx',
+    'siteAddress': t('lblSitePh'),
+    'cityField': t('lblCityPh'),
+    'countryField': t('lblCountryPh'),
+    'techName': t('lblTechPh'),
+    'serialNumber': isAr ? 'الرقم التسلسلي للوحدة' : 'Unit serial number',
+    'installYear': isAr ? 'مثال: 2022' : 'e.g. 2022',
+    'workSummary': isAr ? 'اوصف جميع الأعمال التي تمت خلال هذه الزيارة...' : 'Describe all work performed during this visit...',
+    'recommendations': isAr ? 'قطع الغيار المطلوبة، تاريخ الصيانة القادم، بنود تتطلب موافقة العميل...' : 'Parts to order, next PM date, items requiring customer approval...',
+    'spareParts': isAr ? 'اذكر أي قطع تم استبدالها' : 'List any parts replaced',
+    'errorNotes': isAr ? 'اشرح أعراض العطل، خطوات التشخيص، القطع المستبدلة...' : 'Describe fault symptoms, steps taken to diagnose, parts replaced...',
+    'inspectionNotes': isAr ? 'الملاحظات، الصور الملتقطة، البنود التي تحتاج متابعة...' : 'Observations, photos taken, items requiring follow-up...',
+  };
+  Object.entries(phMap).forEach(([id, ph]) => {
+    const el = document.getElementById(id);
+    if(el) el.placeholder = ph;
+  });
+
+  // Update form field labels in Section 1 (all labels in the section)
+  const allLabels = document.querySelectorAll('.field-group label');
+  const labelTextMap_en = {
+    'Customer Name': t('lblCustomer'),
+    'Contact Number': t('lblContact'),
+    'Site Location': t('lblSite'),
+    'City': t('lblCity'),
+    'Country': t('lblCountry'),
+    'Service Date': t('lblDate'),
+    'Technician Name': t('lblTech'),
+    'Type of Service Visit': t('lblServiceType'),
+    'Brand': t('lblBrand'),
+    'Unit Type': t('lblUnitType'),
+    'Outdoor Model': t('lblOutdoor'),
+    'Indoor Model': t('lblIndoor'),
+    'Serial Number': t('lblSerial'),
+    'Installation Year': t('lblInstYear'),
+  };
+  allLabels.forEach(lbl => {
+    const txt = lbl.childNodes[0]?.textContent?.trim();
+    const span = lbl.querySelector('.req');
+    if(txt && labelTextMap_en[txt]) {
+      lbl.childNodes[0].textContent = labelTextMap_en[txt] + (span ? ' ' : '');
+    }
+  });
+}
+
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   setDate();
@@ -71,11 +314,11 @@ function validateSection(n) {
     const addr = document.getElementById('siteAddress').value.trim();
     const svcType = document.getElementById('serviceTypeVal').value;
     if (!name || !phone || !addr) {
-      showToast('Please fill in all required customer details', 'error');
+      showToast(t('toastFillCustomer'), 'error');
       return false;
     }
     if (!svcType) {
-      showToast('Please select a service visit type', 'error');
+      showToast(t('toastPickService'), 'error');
       return false;
     }
   }
@@ -84,7 +327,7 @@ function validateSection(n) {
     const type = document.getElementById('unitType').value;
     const model = document.getElementById('outdoorModel').value;
     if (!brand || !type || !model || model.includes('Select')) {
-      showToast('Please select brand, unit type and model', 'error');
+      showToast(t('toastPickModel'), 'error');
       return false;
     }
   }
@@ -551,7 +794,7 @@ function selectError(idx) {
 function addErrorCode() {
   if (!currentErrorMatch) return;
   if (addedErrorCodes.some(e => e.code === currentErrorMatch.code && e.model_category === currentErrorMatch.model_category)) {
-    showToast('Error code already added', 'warning');
+    showToast(t('toastErrAdded'), 'warning');
     return;
   }
   addedErrorCodes.push({...currentErrorMatch});
@@ -730,7 +973,7 @@ document.getElementById('locateBtn').addEventListener('click', () => {
     showToast('Geolocation not supported', 'error');
     return;
   }
-  showToast('Getting your location...', '');
+  showToast(t('toastLoc'), '');
   navigator.geolocation.getCurrentPosition(pos => {
     selectedLat = pos.coords.latitude;
     selectedLng = pos.coords.longitude;
@@ -739,10 +982,10 @@ document.getElementById('locateBtn').addEventListener('click', () => {
     document.getElementById('coordsDisplay').style.display = '';
     document.getElementById('siteAddress').value = `Lat: ${selectedLat.toFixed(5)}, Lng: ${selectedLng.toFixed(5)}`;
     showMapEmbed(selectedLat, selectedLng);
-    showToast('Location captured!', 'success');
+    showToast(t('toastLocOK'), 'success');
     reverseGeocode(selectedLat, selectedLng);
   }, () => {
-    showToast('Could not get location. Please enter address manually.', 'error');
+    showToast(t('toastLocFail'), 'error');
   });
 });
 
@@ -768,7 +1011,7 @@ function reverseGeocode(lat, lng) {
         if (data.display_name) {
           document.getElementById('siteAddress').value = data.display_name;
         }
-        showToast('City & country auto-filled!', 'success');
+        showToast(t('toastCityOK'), 'success');
       }
     })
     .catch(() => {/* silently fail - user can fill manually */});
@@ -845,14 +1088,14 @@ function val(id, unit = '') {
 function submitReport() {
   const status = document.getElementById('systemStatusVal').value;
   const summary = document.getElementById('workSummary').value;
-  if (!status) { showToast('Please select overall system status', 'error'); return; }
-  if (!summary.trim()) { showToast('Please enter work performed summary', 'error'); return; }
+  if (!status) { showToast(t('toastStatus'), 'error'); return; }
+  if (!summary.trim()) { showToast(t('toastSummary'), 'error'); return; }
 
   generatePreview();
 
   const report = buildReportData();
   savePDF();
-  showToast('✅ Report submitted! Generating PDF...', 'success');
+  showToast(t('toastSubmit'), 'success');
 }
 
 function buildReportData() {
@@ -1087,6 +1330,17 @@ function savePDF() {
 
   const isThree = d.phase && d.phase.includes('Three');
 
+  // ── Map static image URL ─────────────────────────────────────────────
+  let mapStaticUrl = '';
+  if (selectedLat && selectedLng) {
+    // OpenStreetMap static tile - no API key needed
+    mapStaticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${selectedLat},${selectedLng}&zoom=15&size=600x300&maptype=mapnik&markers=${selectedLat},${selectedLng},red`;
+  } else if (d.site && !d.site.startsWith('Lat:')) {
+    const encodedAddr = encodeURIComponent(d.site);
+    mapStaticUrl = `https://maps.google.com/maps/api/staticmap?center=${encodedAddr}&zoom=15&size=600x200&markers=color:red|${encodedAddr}&key=`;
+  }
+
+
   function row(label, val) {
     if (!val || val === '' || val === '—') return '';
     return `<div class="print-field"><div class="print-label">${label}</div><div class="print-value">${val}</div></div>`;
@@ -1120,10 +1374,10 @@ function savePDF() {
     : '<div style="color:#888;font-size:11px;">No photos captured</div>';
 
   printEl.innerHTML = `
-    <div class="print-report-wrap">
+    <div class="print-report-wrap" style="${currentLang === 'ar' ? 'direction:rtl;text-align:right;' : ''}">
       <div class="print-header">
         <img src="${logoSrc}" class="print-logo" alt="Rheem">
-        <div class="print-title">HVAC Service Report</div>
+        <div class="print-title">${currentLang === 'ar' ? 'تقرير خدمة التكييف' : 'HVAC Service Report'}</div>
         <div class="print-ref"><strong>Ref:</strong> ${d.reportId}<br><strong>Date:</strong> ${d.date}<br><strong>Status:</strong> ${d.systemStatus || 'N/A'}</div>
       </div>
 
@@ -1135,6 +1389,7 @@ function savePDF() {
           ${row('Country', d.country)} ${row('Technician', d.tech)}
           ${row('Service Type', d.serviceType)}
         </div>
+        ${mapStaticUrl ? `<div style="margin-top:8px;"><div style="font-size:9px;color:#888;text-transform:uppercase;margin-bottom:4px;">📍 Location Map</div><img src="${mapStaticUrl}" style="width:100%;max-width:560px;height:160px;object-fit:cover;border:1px solid #EEE;border-radius:4px;" onerror="this.style.display='none'" alt="Location Map"><div style="font-size:9px;color:#888;margin-top:3px;">Lat: ${selectedLat ? selectedLat.toFixed(5) : '—'} | Lng: ${selectedLng ? selectedLng.toFixed(5) : '—'}</div></div>` : (d.site && !d.site.startsWith('Lat:') ? `<div style="margin-top:8px;font-size:9px;color:#888;">📍 Address: ${d.site}</div>` : '')}
       </div>
 
       <div class="print-section">
@@ -1260,13 +1515,92 @@ function savePDF() {
       </div>
 
       <div class="print-footer">
-        ELECTRICALLY GENERATED REPORT — NO SIGNATURE REQUIRED &nbsp;|&nbsp; Ref: ${d.reportId} &nbsp;|&nbsp; ${new Date().toLocaleString('en-GB')} &nbsp;|&nbsp; Rheem — Engineered for Life™
+        ${currentLang === 'ar' ? 'تقرير مُنشأ إلكترونياً — لا يتطلب توقيعاً' : 'ELECTRICALLY GENERATED REPORT — NO SIGNATURE REQUIRED'} &nbsp;|&nbsp; Ref: ${d.reportId} &nbsp;|&nbsp; ${new Date().toLocaleString('en-GB')} &nbsp;|&nbsp; Rheem — Engineered for Life™
       </div>
     </div>
   `;
 
   // Trigger print dialog unless called silently
   if (!window._skipPrint) setTimeout(() => window.print(), 400);
+}
+
+
+// ===== EMAIL RHEEM =====
+function emailRheem() {
+  const reportId = document.getElementById('reportId').textContent;
+  const customer = document.getElementById('customerName').value || 'N/A';
+  const site = document.getElementById('siteAddress').value || 'N/A';
+  const tech = document.getElementById('techName').value || 'N/A';
+  const date = document.getElementById('serviceDate').value || '';
+  const model = document.getElementById('outdoorModel').value || 'N/A';
+  const unitType = document.getElementById('unitType').value || '';
+  const status = document.getElementById('systemStatusVal').value || 'N/A';
+  const serviceType = document.getElementById('serviceTypeVal').value || 'N/A';
+  const brand = document.getElementById('brandVal').value || 'Rheem';
+  const serial = document.getElementById('serialNumber').value || 'N/A';
+  const workSummary = document.getElementById('workSummary').value || 'N/A';
+  const recommendations = document.getElementById('recommendations').value || 'N/A';
+  const sp = document.getElementById('suctionPressure').value;
+  const dp = document.getElementById('dischargePressure').value;
+  const sh = document.getElementById('superheatVal').textContent;
+  const sc = document.getElementById('subcoolingVal').textContent;
+  const dt = document.getElementById('deltaTVal').textContent;
+  const comp1 = document.getElementById('compCurrent1').value;
+  const v1 = document.getElementById('voltL1').value;
+  const errors = addedErrorCodes.length
+    ? addedErrorCodes.map(e => `${e.code} - ${e.description}`).join('; ')
+    : 'None';
+  const spareParts = document.getElementById('spareParts').value || 'None';
+
+  const subject = encodeURIComponent(`Rheem HVAC Service Report - ${reportId} - ${customer}`);
+  const body = encodeURIComponent(
+`Rheem HVAC Service Report
+==========================
+Report Reference: ${reportId}
+Date: ${date}
+Service Type: ${serviceType}
+
+CUSTOMER INFORMATION
+Customer Name: ${customer}
+Site Location: ${site}
+Technician: ${tech}
+
+UNIT DETAILS
+Brand: ${brand}
+Unit Type: ${unitType}
+Model: ${model}
+Serial No: ${serial}
+
+REFRIGERATION PARAMETERS (R-410A)
+Suction Pressure: ${sp || '—'} PSIG
+Discharge Pressure: ${dp || '—'} PSIG
+Superheat: ${sh || '—'} °C
+Subcooling: ${sc || '—'} °C
+Delta-T: ${dt || '—'} °C
+
+ELECTRICAL
+Voltage: ${v1 || '—'} V
+Compressor Current: ${comp1 || '—'} A
+
+ERROR CODES: ${errors}
+SPARE PARTS USED: ${spareParts}
+
+SYSTEM STATUS: ${status}
+
+WORK PERFORMED:
+${workSummary}
+
+RECOMMENDATIONS:
+${recommendations}
+
+---
+This report was generated by the Rheem HVAC Service App.
+Rheem — Engineered for Life™`
+  );
+
+  const mailtoLink = `mailto:service.sa@rheem.com?subject=${subject}&body=${body}`;
+  window.open(mailtoLink, '_blank');
+  showToast('Opening email client for Rheem service...', 'success');
 }
 
 // ===== WHATSAPP SHARE =====
