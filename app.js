@@ -1035,6 +1035,41 @@ function savePDF() {
     inspNotes: document.getElementById('inspectionNotes').value,
   };
 
+  // ── Collect all active warnings from DOM ──────────────────────────────
+  const activeWarnings = [];
+  // Refrigerant warnings
+  const refrigAlertEl = document.getElementById('refrigAlerts');
+  if (refrigAlertEl && refrigAlertEl.style.display !== 'none' && refrigAlertEl.textContent.trim()) {
+    refrigAlertEl.querySelectorAll('div').forEach(div => {
+      const txt = div.textContent.trim();
+      if (txt) activeWarnings.push({ type: 'refrig', msg: txt });
+    });
+  }
+  // Voltage warnings
+  const voltAlertEl = document.getElementById('voltageAlert');
+  if (voltAlertEl && voltAlertEl.style.display !== 'none' && voltAlertEl.textContent.trim()) {
+    voltAlertEl.querySelectorAll('div').forEach(div => {
+      const txt = div.textContent.trim();
+      if (txt) activeWarnings.push({ type: 'electrical', msg: txt });
+    });
+  }
+  // Airflow / delta-T warnings
+  const airAlertEl = document.getElementById('airflowAlert');
+  if (airAlertEl && airAlertEl.style.display !== 'none' && airAlertEl.textContent.trim()) {
+    airAlertEl.querySelectorAll('div').forEach(div => {
+      const txt = div.textContent.trim();
+      if (txt) activeWarnings.push({ type: 'airflow', msg: txt });
+    });
+  }
+  // Blower current warning
+  const blowerWarnEl = document.getElementById('blowerWarnMsg');
+  if (blowerWarnEl && blowerWarnEl.textContent.trim()) {
+    const bwrap = document.getElementById('blowerWarnWrap');
+    if (bwrap && bwrap.style.display !== 'none') {
+      activeWarnings.push({ type: 'airflow', msg: blowerWarnEl.textContent.trim() });
+    }
+  }
+
   // Checklist
   const chks = {};
   document.querySelectorAll('input[type="checkbox"][id^="chk_"]').forEach(cb => {
@@ -1171,6 +1206,8 @@ function savePDF() {
           ${chkBox('thermostat','Thermostat functional')}
           ${chkBox('modes','All modes tested')}
           ${chkBox('sensors','Temperature sensors verified')}
+          ${chkBox('blower_tight','Blower motor mountings & set screws tight')}
+          ${chkBox('blower_belt','Blower belt / coupling condition checked')}
         </div>
         ${d.inspNotes ? `<div style="font-size:10px;margin-top:6px;color:#444;"><strong>Remarks:</strong> ${d.inspNotes}</div>` : ''}
       </div>
@@ -1179,6 +1216,21 @@ function savePDF() {
         <div class="print-section-title">07 · Site Photographs (${sitePhotos.length} captured)</div>
         ${photosHtml}
       </div>
+
+      ${activeWarnings.length ? `
+      <div class="print-section" style="break-inside:avoid;">
+        <div class="print-section-title" style="background:#B71C1C;">⚠ System Warnings & Alerts</div>
+        <div style="padding:4px 0;">
+          ${activeWarnings.map(w => {
+            const icon = w.type==='refrig' ? '❄️' : w.type==='electrical' ? '⚡' : '🌬️';
+            const color = w.msg.includes('❗') || w.msg.includes('dangerously') ? '#B71C1C' : '#E65100';
+            return `<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;border-bottom:1px solid #EEE;font-size:10px;">
+              <span style="flex-shrink:0;">${icon}</span>
+              <span style="color:${color};font-weight:600;">${w.msg.replace(/[❗⚠️❄️⚡🌬️]/g,'').trim()}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
 
       <div class="print-section">
         <div class="print-section-title">08 · Fault Diagnosis</div>
@@ -1203,18 +1255,71 @@ function savePDF() {
       </div>
 
       <div class="print-footer">
-        Rheem HVAC Service Report · ${d.reportId} · Generated ${new Date().toLocaleString('en-GB')} · Rheem — Engineered for Life™
+        ELECTRICALLY GENERATED REPORT — NO SIGNATURE REQUIRED &nbsp;|&nbsp; Ref: ${d.reportId} &nbsp;|&nbsp; ${new Date().toLocaleString('en-GB')} &nbsp;|&nbsp; Rheem — Engineered for Life™
       </div>
     </div>
   `;
 
-  // Trigger print dialog (browser → Save as PDF)
-  setTimeout(() => window.print(), 400);
+  // Trigger print dialog unless called silently
+  if (!window._skipPrint) setTimeout(() => window.print(), 400);
 }
 
 // ===== WHATSAPP SHARE =====
 function shareWhatsApp() {
+  // Build the PDF report first, then share it via Web Share API
+  // Fall back to text summary if share API unavailable
   const reportId = document.getElementById('reportId').textContent;
+  const printEl = document.getElementById('printReport');
+
+  // Trigger the PDF build first (same as savePDF but without print dialog)
+  _buildPDFContent();
+
+  // Use Web Share API if available (mobile) to share the page as PDF
+  if (navigator.share && navigator.canShare) {
+    // Convert the print content to a blob for sharing
+    const htmlContent = printEl.innerHTML;
+    const fullDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rheem Service Report ${reportId}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:16px;}
+      .print-header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #CC0000;padding-bottom:10px;margin-bottom:14px;}
+      .print-logo{height:44px;} .print-title{font-size:18px;font-weight:800;color:#CC0000;text-transform:uppercase;}
+      .print-section{margin-bottom:12px;} .print-section-title{background:#CC0000;color:#fff;padding:4px 10px;font-weight:700;font-size:11px;text-transform:uppercase;margin-bottom:6px;}
+      .print-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 10px;}
+      .print-field{border-bottom:1px solid #EEE;padding:3px 0;} .print-label{font-size:8px;color:#888;text-transform:uppercase;}
+      .print-value{font-size:11px;font-weight:600;} .print-footer{text-align:center;font-size:8px;color:#999;border-top:1px solid #EEE;padding-top:8px;margin-top:12px;}
+      .print-check-item{display:flex;align-items:center;gap:6px;font-size:10px;padding:2px 0;}
+      .print-check-box{width:10px;height:10px;border:1px solid #999;display:inline-block;text-align:center;line-height:10px;font-size:8px;}
+      .print-check-box.checked{background:#CC0000;border-color:#CC0000;color:#fff;}
+      .print-checklist{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;}
+      .print-error-row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #EEE;}
+      .print-error-code{background:#CC0000;color:#fff;font-weight:700;padding:2px 6px;border-radius:3px;font-size:10px;flex-shrink:0;}
+      .print-photos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+      .print-photo{width:100%;aspect-ratio:4/3;object-fit:cover;border:1px solid #EEE;border-radius:3px;}
+    </style></head><body>${htmlContent}</body></html>`;
+    const blob = new Blob([fullDoc], { type: 'text/html' });
+    const file = new File([blob], `Rheem_Report_${reportId}.html`, { type: 'text/html' });
+    if (navigator.canShare({ files: [file] })) {
+      navigator.share({
+        title: `Rheem Service Report ${reportId}`,
+        text: 'Please find the HVAC service report attached.',
+        files: [file]
+      }).catch(() => _whatsAppFallback(reportId));
+      return;
+    }
+  }
+  _whatsAppFallback(reportId);
+}
+
+function _buildPDFContent() {
+  // Calls savePDF logic without triggering print
+  const temp = window._skipPrint;
+  window._skipPrint = true;
+  savePDF();
+  window._skipPrint = temp;
+}
+
+function _whatsAppFallback(reportId) {
+  // Fallback: send formatted text summary to WhatsApp
   const customer = document.getElementById('customerName').value || 'N/A';
   const site = document.getElementById('siteAddress').value || 'N/A';
   const tech = document.getElementById('techName').value || 'N/A';
@@ -1272,4 +1377,41 @@ _Generated by Rheem Service App — Engineered for Life™_`;
 
   const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
+}
+
+// ===== PWA INSTALL PROMPT =====
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'flex';
+});
+
+function installApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(choice => {
+      const banner = document.getElementById('installBanner');
+      if (banner) banner.style.display = 'none';
+      deferredInstallPrompt = null;
+    });
+  } else {
+    // iOS instructions
+    showToast('On iOS: tap the Share button then "Add to Home Screen"', 'success');
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'none';
+  showToast('✅ Rheem Service App installed!', 'success');
+});
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
 }
