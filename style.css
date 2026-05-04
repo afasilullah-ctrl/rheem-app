@@ -1288,3 +1288,117 @@ textarea { resize: vertical; min-height: 80px; }
 #installBanner {
   display: flex !important;
 }
+
+
+/* Logo centering fix */
+.logo-wrap {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-bottom: 8px;
+}
+.rheem-logo-img {
+  display: block;
+  margin: 0 auto;
+}
+.site-header {
+  text-align: center;
+}
+.header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Email Rheem button */
+.btn-email-rheem {
+  background: #0066CC !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.btn-email-rheem:hover {
+  background: #0052A3 !important;
+  transform: translateY(-1px);
+}
+
+/* Arabic mode styles */
+body.ar-mode {
+  direction: rtl;
+  font-family: 'Noto Kufi Arabic', 'Barlow', Arial, sans-serif;
+}
+body.ar-mode .site-header,
+body.ar-mode .header-inner {
+  direction: rtl;
+}
+body.ar-mode input,
+body.ar-mode select,
+body.ar-mode textarea {
+  text-align: right;
+}
+body.ar-mode .field-group label {
+  text-align: right;
+  display: block;
+}
+body.ar-mode .section-nav {
+  flex-direction: row-reverse;
+}
+body.ar-mode .toggle-group {
+  direction: rtl;
+}
+body.ar-mode .action-btns {
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+}
+body.ar-mode .progress-steps {
+  direction: ltr;
+}
+body.ar-mode .checklist-grid {
+  direction: rtl;
+}
+body.ar-mode .check-item {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+body.ar-mode .params-grid {
+  direction: rtl;
+}
+body.ar-mode .step span {
+  direction: ltr;
+}
+body.ar-mode .delta-t-panel {
+  direction: ltr;
+}
+body.ar-mode .calc-results {
+  direction: ltr;
+}
+body.ar-mode .section-header .section-num {
+  order: 1;
+  margin-left: 12px;
+  margin-right: 0;
+}
+body.ar-mode .section-header div:not(.section-num) {
+  text-align: right;
+}
+body.ar-mode .fault-quick-btn-wrap {
+  text-align: left;
+}
+body.ar-mode .error-search-wrap {
+  direction: rtl;
+}
+body.ar-mode .photo-group-header {
+  flex-direction: row-reverse;
+}
+body.ar-mode .photo-group-header div {
+  text-align: right;
+}
